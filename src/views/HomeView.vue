@@ -1,5 +1,5 @@
 <template>
-  <hello-world />
+  <h5>Token: {{$store.state.jwt_token}}</h5>
 </template>
 
 <script>

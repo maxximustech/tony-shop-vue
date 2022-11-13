@@ -27,16 +27,11 @@
 
       <v-spacer></v-spacer>
 
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
+      <v-btn to="/about">About</v-btn>
+      <v-btn to="/login">Log In</v-btn>
+      <v-btn to="/signup">Sign Up</v-btn>
+      <v-btn @click="logout()">Logout</v-btn>
     </v-app-bar>
-
     <v-main>
       <router-view/>
     </v-main>
@@ -55,6 +50,22 @@ export default {
     setTimeout(()=>{
       this.$vuetify.theme.dark = true;
     }, 3000);
+    if(this.$cookies.isKey('jwt_token')){
+      this.$store.commit('setAuth',{
+        token: this.$cookies.get('jwt_token'),
+        user: {}
+      });
+    }
+  },
+  methods:{
+    logout(){
+      this.$cookies.remove('jwt_token');
+      this.$store.commit('setAuth',{
+        token: "",
+        user: {}
+      });
+      this.$router.push('/login');
+    }
   }
 };
 </script>

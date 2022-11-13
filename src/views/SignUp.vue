@@ -65,15 +65,18 @@
 </template>
 
 <script>
+import PopUp from '../components/PopUp';
 export default {
   name: "SignUp",
+  components: {
+    PopUp
+  },
   data: () => ({
     genderItems: ["male","female"],
     username: "",
     email: "",
     password: "",
     gender: "male",
-    baseUrl: "http://172.20.10.4:5000/",
     signUpLoading: false,
     dialog: false,
     dialogText: ""
@@ -81,7 +84,7 @@ export default {
   methods:{
     signUp(){
       this.signUpLoading = true;
-      fetch(this.baseUrl+"auth",{
+      fetch(this.$store.state.baseUrl+"auth",{
         method: "PUT",
         headers: {
           "Content-Type":"application/json"

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app">
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.13/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script>
+        Vue.component('userInfo',{
+            props: ['username','emailAddress'],
+            template: `<h3>Username is <span v-html="username"></span> and email is {{emailAddress}}</h3>`
+        });
+        let app = new Vue({
+            el: "#app",
+            vuetify: new Vuetify(),
+            data: {
+                greeting: "Good morning",
+                isMorning: true,
+                names:["Tony","Maxx","Fawas"],
+                user: "",
+                email: "",
+                password: "",
+                gender: "",
+                users: [],
+                baseUrl: "http://localhost:5000/",
+                userData: null
+            },
+            methods:{
+               changeGreetings(){
+                   this.isMorning = !this.isMorning;
+               },
+                fetchUsers(){
+                   fetch(this.baseUrl+"users")
+                       .then(response=>{
+                            return response.json();
+                       })
+                       .then(data=>{
+                           console.log(data);
+                           if(data.status === 200){
+                               this.users = data.users;
+                           }else{
+                               alert(data.message);
+                           }
+                       })
+                       .catch(err=>{
+                           alert(err.message);
+                       });
+                },
+                signUp(){
+                   fetch(this.baseUrl+"auth",{
+                       method: "PUT",
+                       headers: {
+                        "Content-Type":"application/json"
+                       },
+                       body: JSON.stringify({
+                           username: this.user,
+                           email: this.email,
+                           password: this.password,
+                           gender: this.gender
+                       })
+                   }).then(response=>{
+                       return response.json();
+                   }).then(data=>{
+                       console.log(data);
+                        if(data.status === 201){
+                            this.users.push(data.user);
+                        }else{
+                            alert(data.message);
+                        }
+                   }).catch(err=>{
+                        alert(err.message);
+                   });
+                },
+                Login(){
+                    fetch(this.baseUrl+"auth",{
+                        method: "POST",
+                        headers: {
+                            "Content-Type":"application/json",
+                        },
+                        body: JSON.stringify({
+                           username: this.user,
+                           password: this.password,
+                       })
+                   }).then(response=>{
+                       return response.json();
+                   }).then(data=>{
+                       console.log(data);
+                        if(data.status === 200){
+                            this.userData = data.user;
+                        }else{
+                            this.userData = null;
+                        }
+                        alert(data.message);
+                   }).catch(err=>{
+                        alert(err.message);
+                   });
+                }
+            },
+            template: `<v-app>
+                            <v-main>
+                                <v-container>
+                                    <v-text-field
+                                        v-model="user" label="Username" type="text" solo
+                                    ></v-text-field>
+                                    <v-text-field
+                                        v-model="password" label="Password" type="password"
+                                    ></v-text-field>
+                                    <v-btn
+                                        color="primary"
+                                        elevation="5" @click="Login()" type="button">Login</v-btn>
+                                    <h3>User Information</h3>
+                                    <user-info v-if="userData !== null" :username="userData.username" :emailAddress="userData.email"></user-info>
+                                </v-container>
+                            </v-main>
+                        </v-app>`,
+            updated(){
+                console.log('updated Lifecycle');
+            },
+            created(){
+                this.fetchUsers();
+            }
+        }
+        );
+    </script>
+</body>
+</html>
