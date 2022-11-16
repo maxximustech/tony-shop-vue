@@ -26,11 +26,42 @@
       </div>
 
       <v-spacer></v-spacer>
-
-      <v-btn to="/about">About</v-btn>
-      <v-btn to="/login">Log In</v-btn>
-      <v-btn to="/signup">Sign Up</v-btn>
-      <v-btn @click="logout()">Logout</v-btn>
+      <div class="hidden-sm-and-down">
+        <template v-for="(menu,i) in $store.state.menus">
+          <v-menu offset-y v-if="(!menu.logInRequired && $store.state.jwt_token === '')||(menu.logInRequired && $store.state.jwt_token !== '')" :key="i">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                  color="white"
+                  dark
+                  text
+                  v-bind="attrs"
+                  v-on="on"
+                  :to="menu.link"
+              >
+                {{menu.name}}
+              </v-btn>
+            </template>
+            <v-list v-if="typeof menu.children !== 'undefined'">
+              <template v-for="(item, j) in menu.children">
+                <v-list-item
+                    v-if="formatMenu(i,j)"
+                    :key="j"
+                    style="cursor: pointer;"
+                >
+                  <router-link tag="div" :to="item.link">
+                    <v-list-item-title>{{ item.name }}</v-list-item-title>
+                  </router-link>
+                </v-list-item>
+              </template>
+            </v-list>
+          </v-menu>
+        </template>
+        <v-btn
+            v-if="$store.state.jwt_token !== ''"
+            color="white"
+            dark
+            text @click="logout()">Logout</v-btn>
+      </div>
     </v-app-bar>
     <v-main>
       <router-view/>
@@ -47,13 +78,31 @@ export default {
     //
   }),
   created(){
-    setTimeout(()=>{
-      this.$vuetify.theme.dark = true;
-    }, 3000);
+    this.$vuetify.theme.dark = true;
     if(this.$cookies.isKey('jwt_token')){
       this.$store.commit('setAuth',{
         token: this.$cookies.get('jwt_token'),
-        user: {}
+        user: {},
+        permissions: []
+      });
+    }
+    if(this.$store.state.jwt_token !== ''){
+      fetch(this.$store.state.baseUrl+'auth',{
+        headers: {
+          'Authorization': this.$store.state.jwt_token
+        }
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 200){
+          this.$store.commit('setAuth',{
+            token: this.$cookies.get('jwt_token'),
+            user: data.user,
+            permissions: data.permissions
+          });
+        }else{
+          this.logout();
+        }
       });
     }
   },
@@ -65,6 +114,12 @@ export default {
         user: {}
       });
       this.$router.push('/login');
+    },
+    formatMenu(parent,child){
+      let result = this.$store.state.permissions.find(p=>{
+        return this.$store.state.menus[parent].children[child].permissionRequired.includes(p);
+      });
+      return result != null;
     }
   }
 };

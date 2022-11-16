@@ -5,10 +5,44 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    baseUrl: "http://172.20.10.4:5000/",
+    baseUrl: "http://172.20.10.2:5000/",
     count: 1,
     jwt_token: "",
-    user: {}
+    user: {},
+    permissions: [],
+    menus: [
+      {
+        name: "About",
+        link: "/about",
+        logInRequired: false
+      },
+      {
+        name: "Login",
+        link: "/login",
+        logInRequired: false
+      },
+      {
+        name: "Sign Up",
+        link: "/signup",
+        logInRequired: false
+      },
+      {
+        name: "Admin",
+        logInRequired: true,
+        children: [
+          {
+            name: "Category",
+            link: "/category",
+            permissionRequired: ['access-all']
+          },
+          {
+            name: "Product",
+            link: "/product",
+            permissionRequired: ['access-all','create:products','edit:products','delete:products']
+          }
+        ]
+      }
+    ]
   },
   getters: {
     increment: state => {
@@ -22,6 +56,7 @@ export default new Vuex.Store({
     setAuth: (state, payload)=>{
       state.jwt_token = payload.token;
       state.user = payload.user;
+      state.permissions = payload.permissions
     }
   },
   actions: {

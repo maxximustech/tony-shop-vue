@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import SignUp from '@/views/SignUp.vue'
 import Login from "@/views/Login";
+import Category from "@/views/Category"
 
 Vue.use(VueRouter)
 
@@ -29,6 +30,11 @@ const routes = [
     path: '/login',
     name: 'login',
     component: Login
+  },
+  {
+    path: '/category',
+    name: 'category',
+    component: Category
   }
 ]
 

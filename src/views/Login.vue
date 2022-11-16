@@ -87,7 +87,8 @@ export default {
         if(data.status === 200){
           this.$store.commit('setAuth',{
             token: data.token,
-            user: data.user
+            user: data.user,
+            permissions: data.permissions
           });
           this.$cookies.set('jwt_token',data.token);
           this.$router.push('/');
