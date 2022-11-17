@@ -4,6 +4,7 @@ import HomeView from '@/views/HomeView.vue'
 import SignUp from '@/views/SignUp.vue'
 import Login from "@/views/Login";
 import Category from "@/views/Category"
+import Product from "@/views/Product";
 
 Vue.use(VueRouter)
 
@@ -35,6 +36,11 @@ const routes = [
     path: '/category',
     name: 'category',
     component: Category
+  },
+  {
+    path: '/product',
+    name: 'product',
+    component: Product
   }
 ]
 

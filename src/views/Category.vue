@@ -9,7 +9,7 @@
               Create New
             </v-btn>
           </div>
-          <v-simple-table>
+          <v-simple-table class="pa-5">
             <template v-slot:default>
               <thead>
               <tr>
@@ -17,6 +17,9 @@
                   Name
                 </th>
                 <th class="text-center">
+                  Last Updated
+                </th>
+                <th class="text-right">
                   Action
                 </th>
               </tr>
@@ -27,10 +30,15 @@
                   :key="item.id"
               >
                 <td class="pa-3">{{ item.name }}</td>
-                <td class="text-center pa-3">
-                  <v-btn color="orange">
-                    Edit
+                <td class="pa-3">
+                  {{item.updatedAt}}
+                </td>
+                <td class="text-right pa-3">
+                  <v-btn fab color="orange" @click="openEditDialog(item.slug, item.name)">
                     <v-icon>mdi-square-edit-outline</v-icon>
+                  </v-btn>
+                  <v-btn class="ml-4" fab color="red" @click="deleteCategory(item.slug)">
+                    <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </td>
               </tr>
@@ -75,6 +83,39 @@
       </v-card>
     </v-dialog>
     <v-dialog
+        v-model="editCategoryDialog"
+        width="500"
+    >
+      <v-card :loading="editCategoryloading" :disabled="editCategoryloading">
+        <v-card-title class="text-h5">
+          Edit Category
+        </v-card-title>
+        <v-text-field
+            label="Name"
+            outlined
+            v-model="categoryToBeEdited"
+            class="mx-5"
+        ></v-text-field>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+              color="red"
+              text
+              @click="editCategoryDialog = false"
+          >
+            Close
+          </v-btn>
+          <v-btn
+              color="primary"
+              text
+              @click="editCategory"
+          >
+            Update
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
         v-model="dialog"
         width="500"
     >
@@ -104,22 +145,21 @@
 <script>
 export default {
   name: "Category",
+  created(){
+    this.getCategory();
+  },
   data: ()=>({
     newCategoryloading: false,
     dialog: false,
     dialogText: '',
     categoryDialog: false,
-    newCategoryName: "Electronics",
-    categories: [
-      {
-        id: 1,
-        name: "Apple"
-      },
-      {
-        id: 2,
-        name: "Samsung"
-      }
-    ]
+    newCategoryName: "",
+    categories: [],
+    editCategoryDialog: false,
+    editCategoryloading: false,
+    categoryToBeEdited: "",
+    categorySlugToBeEdited: '',
+    deleteCategoryLoading: false
   }),
   methods:{
     createCategory(){
@@ -139,6 +179,7 @@ export default {
         if(data.status === 201){
           this.newCategoryName = '';
           this.categoryDialog = false;
+          this.getCategory();
         }
         this.dialog = true;
         this.dialogText = data.message;
@@ -148,6 +189,95 @@ export default {
         this.dialogText = err.message;
         this.newCategoryloading = false;
       });
+    },
+    editCategory(){
+      this.editCategoryloading = true;
+      fetch(this.$store.state.baseUrl+'category/'+this.categorySlugToBeEdited,{
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.$store.state.jwt_token
+        },
+        body:JSON.stringify({
+          name: this.categoryToBeEdited
+        })
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 200){
+          this.categoryToBeEdited = '';
+          this.editCategoryDialog = false;
+          this.getCategory();
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+        this.editCategoryloading = false;
+      }).catch(err=>{
+        this.dialog = true;
+        this.dialogText = err.message;
+        this.editCategoryloading = false;
+      });
+    },
+    deleteCategory(slug){
+      this.deleteCategoryLoading = true;
+      fetch(this.$store.state.baseUrl+'category/'+slug,{
+        method: 'delete',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.$store.state.jwt_token
+        }
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        this.deleteCategoryLoading = false;
+        if(data.status === 200){
+          this.getCategory();
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+      }).catch(err=>{
+        this.deleteCategoryLoading = false;
+        this.dialog = true;
+        this.dialogText = err.message;
+      });
+    },
+    getCategory(){
+      fetch(this.$store.state.baseUrl+'category',{
+        method: 'GET',
+        headers: {
+          'Authorization': this.$store.state.jwt_token
+        }
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 200){
+          this.categories = data.category
+        }else{
+          this.dialog = true;
+          this.dialogText = data.message;
+          this.newCategoryloading = false;
+        }
+        if(data.status === 401){
+          this.$cookies.remove('jwt_token');
+          this.$store.commit('setAuth',{
+            token: "",
+            user: {}
+          });
+          this.$router.push('/login');
+        }
+        if(data.status === 403){
+          this.$router.push('/');
+        }
+      }).catch(err=>{
+        this.dialog = true;
+        this.dialogText = err.message;
+        this.newCategoryloading = false;
+      });
+    },
+    openEditDialog(slug, name){
+      this.categorySlugToBeEdited = slug;
+      this.categoryToBeEdited = name;
+      this.editCategoryDialog = true;
     }
   }
 }
