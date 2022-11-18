@@ -38,8 +38,7 @@
                 <td class="pa-3">
                   <v-avatar>
                     <img
-                        src="https://cdn.vuetifyjs.com/images/john.jpg"
-                        alt="John"
+                        :src="item.imageUrl"
                     >
                   </v-avatar>
                 </td>
@@ -67,7 +66,7 @@
         v-model="productDialog"
         width="500"
     >
-      <v-card :loading="newProductloading" :disabled="newProductloading">
+      <v-card :loading="newProductloading" :disabled="newProductloading" style="position: relative;">
         <v-card-title class="text-h5">
           Create New Product
         </v-card-title>
@@ -96,8 +95,16 @@
             label="Image"
             outlined
             class="mx-5"
-            v-model="newProduct.image"
+            @change="uploadAvatar($event)"
+            @click:clear="newProduct.imageUrl = ''"
         ></v-file-input>
+        <v-img
+            :height="300"
+            v-if="newProduct.imageUrl !== ''"
+            :src="newProduct.imageUrl"
+            class="mx-5 mb-4"
+            contain
+        ></v-img>
         <v-text-field
             label="Price"
             outlined
@@ -117,8 +124,7 @@
           <v-btn
               color="primary"
               text
-              @click=""
-
+              @click="createProduct"
           >
             Create
           </v-btn>
@@ -157,29 +163,22 @@ export default {
   name: "Product",
   created(){
     this.getCategory();
+    this.getProducts();
   },
   data: ()=>({
     dialog: '',
     dialogText: '',
     productDialog: false,
     newProductloading: false,
-    products: [
-      {
-        id: 1,
-        imageUrl: '',
-        title: 'Iphone 11 Pro',
-        price: '50000',
-        updatedAt: '2012-12-12'
-      }
-    ],
+    products: [],
     newProduct: {
       title: '',
       description: '',
-      image: '',
+      imageUrl: '',
       price: '',
       category: ''
     },
-    categories: []
+    categories: [],
   }),
   methods: {
     getProducts(){
@@ -249,6 +248,68 @@ export default {
         this.dialogText = err.message;
       });
     },
+    uploadAvatar(event){
+      if(event == null){
+        return;
+      }
+      let formData = new FormData();
+      formData.append("avatar",event);
+      fetch(this.$store.state.baseUrl+'upload',{
+        method: 'put',
+        headers: {
+          'Authorization': this.$store.state.jwt_token
+        },
+        body: formData
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 201){
+          this.newProduct.imageUrl = this.$store.state.baseUrl+data.path;
+        }else{
+          this.dialog = true;
+          this.dialogText = data.message;
+        }
+      }).catch(err=>{
+        this.dialog = true;
+        this.dialogText = err.message;
+      });
+    },
+    createProduct(){
+      this.newProductloading = true;
+      fetch(this.$store.state.baseUrl+'product',{
+        method: 'put',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.$store.state.jwt_token
+        },
+        body:JSON.stringify({
+          title: this.newProduct.title,
+          category: this.newProduct.category,
+          imageUrl: this.newProduct.imageUrl,
+          description: this.newProduct.description,
+          price: this.newProduct.price
+        })
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 201){
+          this.getProducts();
+          this.newProduct.title = '';
+          this.newProduct.category = '';
+          this.newProduct.imageUrl = '';
+          this.newProduct.description = '';
+          this.newProduct.price = '';
+          this.productDialog = false;
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+        this.newProductloading = false;
+      }).catch(err=>{
+        this.dialog = true;
+        this.dialogText = err.message;
+        this.newProductloading = false;
+      });
+    }
   }
 }
 </script>
