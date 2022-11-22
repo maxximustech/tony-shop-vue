@@ -28,7 +28,7 @@
       <v-spacer></v-spacer>
       <div class="hidden-sm-and-down">
         <template v-for="(menu,i) in $store.state.menus">
-          <v-menu offset-y v-if="(!menu.logInRequired && $store.state.jwt_token === '')||(menu.logInRequired && $store.state.jwt_token !== '')" :key="i">
+          <v-menu offset-y v-if="(!menu.logInRequired && $store.state.jwt_token === '')||(menu.logInRequired && $store.state.jwt_token !== '')||(typeof menu.logInRequired === 'undefined')" :key="i">
             <template v-slot:activator="{ on, attrs }">
               <v-btn
                   color="white"

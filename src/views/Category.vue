@@ -219,6 +219,9 @@ export default {
       });
     },
     deleteCategory(slug){
+      if(!confirm('Are you sure you want to delete this category?')){
+        return;
+      }
       this.deleteCategoryLoading = true;
       fetch(this.$store.state.baseUrl+'category/'+slug,{
         method: 'delete',
@@ -232,6 +235,17 @@ export default {
         this.deleteCategoryLoading = false;
         if(data.status === 200){
           this.getCategory();
+        }
+        if(data.status === 401){
+          this.$cookies.remove('jwt_token');
+          this.$store.commit('setAuth',{
+            token: "",
+            user: {}
+          });
+          this.$router.push('/login');
+        }
+        if(data.status === 403){
+          this.$router.push('/');
         }
         this.dialog = true;
         this.dialogText = data.message;

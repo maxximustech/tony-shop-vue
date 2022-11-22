@@ -48,10 +48,10 @@
                   {{item.updatedAt}}
                 </td>
                 <td class="text-right pa-3">
-                  <v-btn fab color="orange" @click="">
+                  <v-btn fab color="orange" @click="openEditDialog(item.id)">
                     <v-icon>mdi-square-edit-outline</v-icon>
                   </v-btn>
-                  <v-btn class="ml-4" fab color="red" @click="">
+                  <v-btn class="ml-4" fab color="red" @click="deleteProduct(item.slug)">
                     <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </td>
@@ -132,6 +132,75 @@
       </v-card>
     </v-dialog>
     <v-dialog
+        v-model="editProductDialog"
+        width="500"
+    >
+      <v-card :loading="editProductloading" :disabled="editProductloading" style="position: relative;">
+        <v-card-title class="text-h5">
+          Edit Product
+        </v-card-title>
+        <v-text-field
+            label="Title"
+            outlined
+            class="mx-5"
+            v-model="editProduct.title"
+        ></v-text-field>
+        <v-textarea
+            label="Description"
+            outlined
+            class="mx-5"
+            v-model="editProduct.description"
+        ></v-textarea>
+        <v-select
+            :items="categories"
+            item-text="name"
+            item-value="id"
+            label="Category"
+            outlined
+            class="mx-5"
+            v-model="editProduct.category"
+        ></v-select>
+        <v-file-input
+            label="Image"
+            outlined
+            class="mx-5"
+            @change="uploadAvatar($event,'edit')"
+            @click:clear="editProduct.imageUrl = ''"
+        ></v-file-input>
+        <v-img
+            :height="300"
+            v-if="editProduct.imageUrl !== ''"
+            :src="editProduct.imageUrl"
+            class="mx-5 mb-4"
+            contain
+        ></v-img>
+        <v-text-field
+            label="Price"
+            outlined
+            type="number"
+            class="mx-5"
+            v-model="editProduct.price"
+        ></v-text-field>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+              color="red"
+              text
+              @click="editProductDialog = false"
+          >
+            Close
+          </v-btn>
+          <v-btn
+              color="primary"
+              text
+              @click="updateProduct"
+          >
+            Edit
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
         v-model="dialog"
         width="500"
     >
@@ -178,7 +247,18 @@ export default {
       price: '',
       category: ''
     },
+    editProduct: {
+      title: '',
+      description: '',
+      imageUrl: '',
+      price: '',
+      category: '',
+      slug: ''
+    },
+    editProductDialog: false,
+    editProductloading: false,
     categories: [],
+    deleteProductLoading: false
   }),
   methods: {
     getProducts(){
@@ -248,7 +328,7 @@ export default {
         this.dialogText = err.message;
       });
     },
-    uploadAvatar(event){
+    uploadAvatar(event,type='new'){
       if(event == null){
         return;
       }
@@ -264,7 +344,11 @@ export default {
         return response.json();
       }).then(data=>{
         if(data.status === 201){
-          this.newProduct.imageUrl = this.$store.state.baseUrl+data.path;
+          if(type === 'new'){
+            this.newProduct.imageUrl = this.$store.state.baseUrl+data.path;
+          }else{
+            this.editProduct.imageUrl = this.$store.state.baseUrl+data.path;
+          }
         }else{
           this.dialog = true;
           this.dialogText = data.message;
@@ -301,6 +385,17 @@ export default {
           this.newProduct.price = '';
           this.productDialog = false;
         }
+        if(data.status === 401){
+          this.$cookies.remove('jwt_token');
+          this.$store.commit('setAuth',{
+            token: "",
+            user: {}
+          });
+          this.$router.push('/login');
+        }
+        if(data.status === 403){
+          this.$router.push('/');
+        }
         this.dialog = true;
         this.dialogText = data.message;
         this.newProductloading = false;
@@ -309,7 +404,76 @@ export default {
         this.dialogText = err.message;
         this.newProductloading = false;
       });
-    }
+    },
+    updateProduct(){
+      this.editProductloading = true;
+      fetch(this.$store.state.baseUrl+'product/'+this.editProduct.slug,{
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.$store.state.jwt_token
+        },
+        body:JSON.stringify({
+          title: this.editProduct.title,
+          category: this.editProduct.category,
+          imageUrl: this.editProduct.imageUrl,
+          description: this.editProduct.description,
+          price: this.editProduct.price
+        })
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        if(data.status === 201){
+          this.getProducts();
+          this.editProduct.title = '';
+          this.editProduct.category = '';
+          this.editProduct.imageUrl = '';
+          this.editProduct.description = '';
+          this.editProduct.price = '';
+          this.editProductDialog = false;
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+        this.editProductloading = false;
+      }).catch(err=>{
+        this.dialog = true;
+        this.dialogText = err.message;
+        this.editProductloading = false;
+      });
+    },
+    openEditDialog(id){
+      this.editProductDialog = true;
+      this.editProduct = this.products.find(product=>{
+         return id.toString() === product.id.toString()
+      });
+      this.editProduct.category = this.editProduct.categoryId;
+    },
+    deleteProduct(slug){
+      if(!confirm('Are you sure you want to delete this product?')){
+        return;
+      }
+      this.deleteProductLoading = true;
+      fetch(this.$store.state.baseUrl+'product/'+slug,{
+        method: 'delete',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.$store.state.jwt_token
+        }
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        this.deleteProductLoading = false;
+        if(data.status === 200){
+          this.getProducts();
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+      }).catch(err=>{
+        this.deleteProductLoading = false;
+        this.dialog = true;
+        this.dialogText = err.message;
+      });
+    },
   }
 }
 </script>

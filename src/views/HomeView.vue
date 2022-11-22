@@ -1,15 +1,80 @@
 <template>
-  <h5>Token: {{$store.state.jwt_token}}</h5>
+  <v-app>
+    <v-main>
+      <v-container>
+        <template v-if="products.length > 0">
+          <v-row>
+            <v-col cols="12" sm="6" md="4" lg="3" v-for="product in products" :key="product.id">
+              <SingleProduct :item="product" @addToCartEmitted="(data)=>{ setDialog(data.message);}" />
+            </v-col>
+          </v-row>
+        </template>
+      </v-container>
+    </v-main>
+    <v-dialog
+        v-model="dialog"
+        width="500"
+    >
+      <v-card class="pa-5">
+
+        <v-card-text>
+          {{ dialogText }}
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+              color="primary"
+              text
+              @click="dialog = false"
+          >
+            Ok
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-app>
 </template>
 
 <script>
-  import HelloWorld from '../components/HelloWorld'
-
+  import SingleProduct from "@/components/SingleProduct";
   export default {
     name: 'Home',
-
-    components: {
-      HelloWorld,
+    created(){
+      this.getProducts();
     },
+    components: {
+      SingleProduct
+    },
+    data: ()=>({
+      products: [],
+      dialog: false,
+      dialogText: ''
+    }),
+    methods: {
+      getProducts(){
+        fetch(this.$store.state.baseUrl+'products',{
+          method: 'GET',
+        }).then(response=>{
+          return response.json();
+        }).then(data=>{
+          if(data.status === 200){
+            this.products = data.products
+          }else{
+            this.dialog = true;
+            this.dialogText = data.message;
+          }
+        }).catch(err=>{
+          this.dialog = true;
+          this.dialogText = err.message;
+        });
+      },
+      setDialog(text){
+        this.dialog = true;
+        this.dialogText = text;
+      }
+    }
   }
 </script>

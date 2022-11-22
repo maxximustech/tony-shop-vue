@@ -12,9 +12,17 @@ export default new Vuex.Store({
     permissions: [],
     menus: [
       {
+        name: "Home",
+        link: "/"
+      },
+      {
         name: "About",
-        link: "/about",
-        logInRequired: false
+        link: "/about"
+      },
+      {
+        name: "Cart",
+        link: "/cart",
+        logInRequired: true
       },
       {
         name: "Login",
