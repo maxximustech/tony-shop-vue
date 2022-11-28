@@ -5,7 +5,7 @@
         <template v-if="products.length > 0">
           <v-row>
             <v-col cols="12" sm="6" md="4" lg="3" v-for="product in products" :key="product.id">
-              <SingleProduct :item="product" @addToCartEmitted="(data)=>{ setDialog(data.message);}" />
+              <SingleProduct :item="product" @addToCartEmitted="(data)=>{ setSnackBar(data);}" />
             </v-col>
           </v-row>
         </template>
@@ -35,6 +35,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-snackbar
+        v-model="snackbar"
+        :color="snackbarColor"
+        right
+        :timeout="3000"
+    >{{snackbarText}}</v-snackbar>
   </v-app>
 </template>
 
@@ -51,7 +57,10 @@
     data: ()=>({
       products: [],
       dialog: false,
-      dialogText: ''
+      dialogText: '',
+      snackbar: false,
+      snackbarText: '',
+      snackbarColor: 'green'
     }),
     methods: {
       getProducts(){
@@ -74,6 +83,11 @@
       setDialog(text){
         this.dialog = true;
         this.dialogText = text;
+      },
+      setSnackBar(data){
+        this.snackbar = true;
+        this.snackbarText = data.message;
+        this.snackbarColor = data.status === 200 ? 'green':'red';
       }
     }
   }

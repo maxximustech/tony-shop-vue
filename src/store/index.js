@@ -25,6 +25,11 @@ export default new Vuex.Store({
         logInRequired: true
       },
       {
+        name: "Orders",
+        link: "/orders",
+        logInRequired: true
+      },
+      {
         name: "Login",
         link: "/login",
         logInRequired: false

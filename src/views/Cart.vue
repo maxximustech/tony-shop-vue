@@ -51,40 +51,8 @@
         </template>
         <div class="text-right">
           <h3>Total: N{{getTotal.toLocaleString('en-GB')}}</h3>
-          <v-btn color="primary" @click="proceedToCheckout">Checkout</v-btn>
+          <v-btn color="primary" @click="proceedToCheckout" :loading="checkoutLoading">Checkout</v-btn>
         </div>
-        <v-dialog
-            v-model="openPaystack"
-            width="500"
-        >
-          <v-card class="pa-5">
-            <div class="text-center">
-              <paystack
-                  v-if="openPaystack"
-                  :amount="getTotal*100"
-                  :email="$store.state.user.email"
-                  :paystackkey="paystackKey"
-                  :reference="genReference"
-                  :callback="callback"
-                  :close="close"
-                  :embed="false"
-              >
-                <v-btn color="primary">Proceed to Paystack</v-btn>
-              </paystack>
-            </div>
-            <v-divider></v-divider>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                  color="primary"
-                  text
-                  @click="openPaystack = false"
-              >
-                Ok
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
       </v-container>
       <v-container class="text-center" v-else>
         <h2>Cart is empty</h2>
@@ -118,12 +86,8 @@
 </template>
 
 <script>
-import paystack from 'vue-paystack';
 export default {
   name: "Cart",
-  components:{
-    paystack
-  },
   created(){
     this.getCart();
   },
@@ -131,9 +95,7 @@ export default {
     carts: [],
     dialog: false,
     dialogText: false,
-    paystackKey: 'pk_test_0de735aad98a3f32acdda4cf6c335665ae70268c',
-    openPaystack: false,
-    reference: ''
+    checkoutLoading: false
   }),
   methods:{
     getCart(){
@@ -234,22 +196,41 @@ export default {
         this.dialogText = err.message;
       });
     },
-    callback: function(response){
-      this.openPaystack = false;
-      console.log(response)
-      if(response.status === 'success'){
-        this.dialog = true;
-        this.dialogText = 'Payment received successfully'
-        this.clearCart();
-      }
-    },
-    close: function(){
-      this.openPaystack = false;
-      console.log("Payment closed")
-    },
     proceedToCheckout(){
-      this.reference = this.genReference;
-      this.openPaystack = true;
+      this.checkoutLoading = true;
+      fetch(this.$store.state.baseUrl+'checkout',{
+        method: 'PUT',
+        headers:{
+          'Authorization': this.$store.state.jwt_token
+        }
+      }).then(response=>{
+        return response.json();
+      }).then(data=>{
+        this.checkoutLoading = false;
+        if(data.status === 200){
+          this.$router.push('/order/'+data.order.ref);
+          return;
+        }
+        this.dialog = true;
+        this.dialogText = data.message;
+        if (data.status === 401) {
+          this.$cookies.remove('jwt_token');
+          this.$store.commit('setAuth', {
+            token: "",
+            user: {}
+          });
+          this.$router.push('/login');
+        }
+        if (data.status === 403) {
+          this.$router.push('/');
+        }
+      }).catch(err => {
+        this.checkoutLoading = false;
+        this.dialog = true;
+        this.dialogText = err.message;
+      });
+      // this.reference = this.genReference;
+      // this.openPaystack = true;
     },
     clearCart(){
       fetch(this.$store.state.baseUrl + 'cart', {
@@ -288,16 +269,6 @@ export default {
       });
       return t;
     },
-    genReference(){
-      let text = "";
-      let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-      for( let i=0; i < 10; i++ )
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-      return text;
-    }
-
   }
 }
 </script>
