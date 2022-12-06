@@ -19,37 +19,16 @@
           <v-text-field
               label="Password"
               outlined
-              type="password"
+              :type="showPassword?'text':'password'"
               v-model="password"
+              :append-icon="showPassword?'mdi-eye-off':'mdi-eye'"
+              @click:append="showPassword = !showPassword"
           ></v-text-field>
           <v-btn :loading="loginLoading" @click="logIn()" color="primary" large>Log In</v-btn>
         </v-col>
       </v-row>
     </v-main>
-    <v-dialog
-        v-model="dialog"
-        width="500"
-    >
-      <v-card class="pa-5">
-
-        <v-card-text>
-          {{ dialogText }}
-        </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-              color="primary"
-              text
-              @click="dialog = false"
-          >
-            Ok
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <PopUp :dialog="dialog" :dialogText="dialogText" @dialogClosed="dialog = false"/>
   </v-app>
 </template>
 
@@ -57,7 +36,15 @@
 import PopUp from "@/components/PopUp";
 export default {
   name: "Login",
+  metaInfo(){
+    return {
+      title: this.title
+    }
+  },
   watch:{
+
+  },
+  created(){
 
   },
   components: {PopUp},
@@ -66,7 +53,9 @@ export default {
     password: "",
     dialog: false,
     dialogText: "",
-    loginLoading: false
+    loginLoading: false,
+    title: 'Login',
+    showPassword: false
   }),
   methods: {
     logIn(){

@@ -1,6 +1,6 @@
 <template>
   <v-dialog
-      v-model="show"
+      v-model="dialog"
       width="500"
   >
     <v-card class="pa-5">
@@ -42,7 +42,7 @@ export default {
   }),
   methods:{
     closePopUp(){
-      this.dialog = false;
+      this.$emit('dialogClosed');
     }
   }
 }

@@ -73,7 +73,12 @@
 
 export default {
   name: 'App',
-
+  metaInfo(){
+    return {
+      title: 'App',
+      titleTemplate: '%s - Tony Shop'
+    }
+  },
   data: () => ({
     //
   }),

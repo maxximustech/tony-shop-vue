@@ -30,36 +30,15 @@
           ></v-text-field>
           <v-select
               :items="genderItems"
+              item-text="text"
+              item-value="value"
               outlined
               v-model="gender"
           ></v-select>
           <v-btn :loading="signUpLoading" @click="signUp" color="primary" large>Sign Up</v-btn>
         </v-col>
       </v-row>
-      <v-dialog
-          v-model="dialog"
-          width="500"
-      >
-        <v-card class="pa-5">
-
-          <v-card-text>
-            {{ dialogText }}
-          </v-card-text>
-
-          <v-divider></v-divider>
-
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-                color="primary"
-                text
-                @click="dialog = false"
-            >
-              Ok
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+      <PopUp :dialog="dialog" :dialogText="dialogText" @dialogClosed="dialog = false"/>
     </v-main>
   </v-app>
 </template>
@@ -68,11 +47,23 @@
 import PopUp from '../components/PopUp';
 export default {
   name: "SignUp",
+  metaInfo(){
+    return {
+      title: 'Sign Up'
+    }
+  },
   components: {
     PopUp
   },
   data: () => ({
-    genderItems: ["male","female"],
+    genderItems: [{
+      text: 'Male',
+      value: 'male'
+    },
+      {
+        text: 'Female',
+        value: 'female'
+      }],
     username: "",
     email: "",
     password: "",
